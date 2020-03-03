@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
             printf("You bought %d of %s, each priced at %d\n", num, resp->name, resp->price);
         } else {
             int total = fin();
-            printf("Your grand total bill: %d.\nBye.", total);
+            printf("Your grand total bill: %d.\nBye.\n", total);
             break;
         }
     }
