@@ -21,7 +21,27 @@ void* serverThread(void *csocket)
 	//serverCode
 	int total = 0;
 	int socket = * (int *)csocket;
+	char buffer[BUFFER_SIZE] = {0};
+	char toSend[BUFFER_SIZE] = {0};
+	int amountRead;
 
+	while(1)
+	{
+		amountRead = read(socket,buffer,sizeof(buffer));
+		if(buffer[0]=='1')
+		{
+			toSend[0] = '1';
+			toSend[1] = ' ';
+			itoa (total,toSend+2,10);
+			write(socket,toSend,sizeof(toSend));
+		}
+		else
+		{
+
+		}
+	}
+	printf("Closing Socket %d\n",socket);
+	close(socket);
 	return NULL;
 }
 
