@@ -34,6 +34,9 @@ struct response {
     char name[BUFFERSIZE];          // Name of Product
 };                                  // Response struct.
 
+
+// Query the server for the given upc and number.  
+
 void query(int upc, int num, struct response* resp) {
     char ask[BUFFERSIZE];           // Store query used to ask
     char buf[BUFFERSIZE];           // Store buffer for response
@@ -60,25 +63,29 @@ void query(int upc, int num, struct response* resp) {
     }
 
     resp->price = price;
-    strcpy(resp->name, name);
+    strcpy(resp->name, name);   
 
 }
 
+// Finish the transaction, and return the grand total 
+
 int fin() {
+
+    // Asking and Receiving buffers
     char ask[BUFFERSIZE];
     char buf[BUFFERSIZE];
 
-    sprintf(ask, "1 000 00");
+    sprintf(ask, "1 000 00");       // Dummy fields filled because of protocol spec.
     write(sock, ask, sizeof(ask));
 
-    while (read(sock, buf, sizeof(buf)) == 0);
+    while (read(sock, buf, sizeof(buf)) == 0); 
 
     int code;
     int total;
 
     sscanf(buf, "%d %d", &code, &total);
 
-    if (code != 0) {
+    if (code != 0) {                // If some error is reported, panic and exit.
         error("Protocol error!");
     }
 
@@ -86,17 +93,15 @@ int fin() {
 }
 
 
-int valid_upcs[MAX_UPC];
-char* names[MAX_UPC];
-int prices[MAX_UPC];
+// This function is called to display the list of products available on the server.  
 
 void display_index() {
     
-    struct response* resp = malloc(sizeof(struct response));
+    struct response* resp = malloc(sizeof(struct response)); 
 
-    for (int upc = 0; upc < MAX_UPC; upc++) {
-        query(upc, 0, resp);
-        if (resp -> price < 0) {
+    for (int upc = 0; upc < MAX_UPC; upc++) {  // Iterate over all possible product index.
+        query(upc, 0, resp);                    // Query, but set a number = 0
+        if (resp -> price < 0) {                // If not present, just ignore
             continue;
         } else {
             printf("(UPC: %03d) Product: %-50s Price: %d\n", upc, resp->name, resp->price);
@@ -107,12 +112,14 @@ void display_index() {
 int main(int argc, char* argv[]) {
 
 
-	signal(SIGINT, sigintHandler); 
+	signal(SIGINT, sigintHandler);      // Register signal handler.
     
     sock = 0;
 
-    char* serv_ip = "";
+    char* serv_ip = ""; 
     int serv_port = -1;
+
+    // Always need 3 arguments, the server ip and port
 
     if (argc != 3) {
         error("Usage: <Executable> <Server IP> <Port Number Of Server>");   
@@ -121,31 +128,29 @@ int main(int argc, char* argv[]) {
         serv_port = atoi(argv[2]);
     }
 
-    for (int j = 0; j < MAX_UPC; j++) {
-        valid_upcs[j] = 0;
-    }
-
     struct sockaddr_in serv_addr;
 
-
+    // Create a socket.
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         error("Could not create socket.");  
     }
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(serv_port);
-
-    if (inet_pton(AF_INET, serv_ip, &serv_addr.sin_addr) <= 0) {
+    
+    if (inet_pton(AF_INET, serv_ip, &serv_addr.sin_addr) <= 0) { // Convert IP.
         error("Invalid IP.");
     }
 
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+    // Try connecting to server, panic if fail.
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) { 
         error("Connection failed!");
     }
 
     char send_buffer[BUFFERSIZE];
     char recv_buffer[BUFFERSIZE];
-    
+   
+    // Open the communication with the user. 
     printf("Hello.\n");
 
     struct response* resp = malloc(sizeof(struct response));
@@ -155,6 +160,7 @@ int main(int argc, char* argv[]) {
    
     while (1) {
         
+        // Print a prompt to ask the user.
         printf("Options: (1) Show Products, (2) Buy Product, (3) Finish Transaction\nChoice (1/2/3)? ");
         int opt;
         scanf("%d", &opt);
@@ -162,44 +168,63 @@ int main(int argc, char* argv[]) {
             printf("Incorrect option.\n");
             continue;
         }
-        if (opt == 1) {
+        if (opt == 1) {     // Show Products
             
             display_index();
 
-        } else if (opt == 2) {
+        } else if (opt == 2) {  // Buy Product
             
             int upc, num;
-            while (1) {
-                printf("Which object (UPC)? ");
+            int quit = 0;
+
+            while (1) {         // Iterate till the user enters a valid product number.
+                printf("Which object (UPC / -1 to exit)? ");
                 scanf("%d", &upc);
-                if (upc < 0 || upc >= MAX_UPC) {
+                if (upc == -1) {    // Quit buying.
+                    printf("Quitting current operation.\n");
+                    quit = 1;
+                    break;
+                }
+                if (upc < 0 || upc >= MAX_UPC) {    // Otherwise remain between range.
                     printf("Invalid UPC.");
                     continue;
                 } else break;
             }
+
+            if (quit) continue;     // Quit has been set means that operation cancelled
+
+
+            // Iterate till user enters a valid quantity.
             while (1) {
                 printf("How many? ");
                 scanf("%d", &num);
-                if (num < 0) {
+                if (num < 0) {  // Invalid 
                     printf("You cannot buy negatively many products.\n");
                     continue;
                 } else break;
             }
            
+            // Tell the server about the current purchase.
             query(upc, num, resp);
             
-            if (resp->price < 0) {
+            if (resp->price < 0) { // Object not present in the database.
                 printf("Object not found in database!\n");
                 continue;
             }
-
+            
+            // Display the transaction results to the user.
             printf("You bought %d of %s, each priced at %d\n", num, resp->name, resp->price);
+
         } else {
-            int total = fin();
+
+            int total = fin(); // Get the total bill,
+            // and display a transaction summary.
+            
             printf("Your grand total bill: %d.\nBye.\n", total);
+            
             break;
         }
     }
 
-    close(sock);
+    close(sock); // Finally close the socket to prevent issues.
 }
