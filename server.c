@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include "server.h"
 #include "lock.h"
+#include "transaction.c"
 
 //Global Variables
 pthread_t tid;
@@ -15,6 +16,12 @@ int serverSocket, connectionSocket;
 struct sockaddr_in serverAddress;
 int opt = 1;
 int addressLen = sizeof(serverAddress);
+
+void sendProblem(int sock)
+{
+	char * x = "1 Protocol Error";
+	write(sock,x,sizeof(x));
+}
 
 void* serverThread(void *csocket)
 {
@@ -25,19 +32,39 @@ void* serverThread(void *csocket)
 	char toSend[BUFFER_SIZE] = {0};
 	int amountRead;
 
+	int type,upc_code,count;
 	while(1)
 	{
-		amountRead = read(socket,buffer,sizeof(buffer));
-		if(buffer[0]=='1')
+		bzero(buffer, sizeof(buffer)); 
+		amountRead = recv(socket,buffer,sizeof(buffer),0);
+		if(amountRead<7)
 		{
-			toSend[0] = '1';
-			toSend[1] = ' ';
-			itoa (total,toSend+2,10);
-			write(socket,toSend,sizeof(toSend));
+			sendProblem(socket);
+			continue;
+		}
+		sscanf(buffer,"%d %d %d",&type,&upc_code,&count);
+		if(type == 1)
+		{
+			sprintf(toSend,"0 %d",total);
+			send(socket,toSend,sizeof(toSend),0);
+			break;
+		}
+		else if(type == 0)
+		{
+			struct product prd = do_transaction(upc_code);
+			if(prd.is_error==1)
+			{
+				sprintf(toSend,"1 UPC is not found in database");
+				send(socket,toSend,sizeof(toSend),0);
+				continue;
+			}
+			total+= prd.price * count;
+			sprintf(toSend,"0 %d %s",prd.price,prd.name);
+			send(socket,toSend,sizeof(toSend),0);
 		}
 		else
 		{
-
+			sendProblem(socket);
 		}
 	}
 	printf("Closing Socket %d\n",socket);
@@ -94,14 +121,17 @@ int main(int argc, char const *argv[])
 
     while(1)
     {
+    	//printf("%s\n","Waiting for new connection" );
     	connectionSocket = accept(serverSocket, (struct sockaddr *)&serverAddress, (socklen_t*)(&addressLen));
     	if(connectionSocket<0)
     	{
     		printf("Connection Error\n");
+    		fflush(stdout);
     	}
     	if(pthread_create(&tid, NULL, &serverThread, &connectionSocket))
     	{
     		printf("Error creating thread\n");
+    		fflush(stdout);
     	}
     }
 }
