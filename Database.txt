@@ -7,4 +7,4 @@
 007 Earphone 4000
 008 Bag 1200
 009 Bottle 700
-010 Hair-Gel 250
+012 Hair-Gel 250

@@ -189,7 +189,8 @@ int main(int argc, char* argv[]) {
             query(upc, num, resp);
             
             if (resp->price < 0) {
-                printf("Object not found in database!\n"); 
+                printf("Object not found in database!\n");
+                continue;
             }
 
             printf("You bought %d of %s, each priced at %d\n", num, resp->name, resp->price);
