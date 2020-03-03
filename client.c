@@ -11,34 +11,34 @@
 #include <arpa/inet.h>
 #include "client.h"
 
-int sock;
+int sock;   // Socket, kept as global for sigintHandler
 
 int fin();
 
-void sigintHandler(int sig_num) 
+void sigintHandler(int sig_num)     // Handles interruption due to user 
 { 
-    signal(SIGINT, sigintHandler); 
-    fin();
-    close(sock);
-    printf("\nYou stopped me.\n");
-    exit(0);
+    signal(SIGINT, sigintHandler);  
+    fin();                          // Finish the communication
+    close(sock);                    // Close the socket
+    printf("\nYou stopped me.\n");  // Report the incident
+    exit(0);                        // Exit safely
 } 
 
 void error(char* msg) {
-    printf("ERROR: %s\n", msg);
-    exit(1);
+    printf("ERROR: %s\n", msg);     // Report the error
+    exit(1);                        // Exit with error
 }
 
 struct response {
-    int price;
-    char name[BUFFERSIZE];
-};
+    int price;                      // Price of Product
+    char name[BUFFERSIZE];          // Name of Product
+};                                  // Response struct.
 
 void query(int upc, int num, struct response* resp) {
-    char ask[BUFFERSIZE];
-    char buf[BUFFERSIZE];
-    sprintf(ask, "0 %03d %d", upc, num);
-    write(sock, ask, sizeof(ask)); 
+    char ask[BUFFERSIZE];           // Store query used to ask
+    char buf[BUFFERSIZE];           // Store buffer for response
+    sprintf(ask, "0 %03d %d", upc, num);        // Format the query string.
+    write(sock, ask, sizeof(ask));              // Send the query 
 
     // Read response 
     
@@ -48,13 +48,13 @@ void query(int upc, int num, struct response* resp) {
     int price;
     char name[BUFFERSIZE];
 
-    sscanf(buf, "%d %d %s", &code, &price, name);
+    sscanf(buf, "%d %d %s", &code, &price, name);   // Parse the read response
     
-    if (code == 1) {
-        if (name[0] == 'P') { // Protocol error
+    if (code == 1) {                // Some error has occurred 
+        if (name[0] == 'P') { // Protocol error 
             error("Protocol Error!");
-        } else {
-            resp->price = -1;
+        } else {              
+            resp->price = -1;   // Object was Invalid
             return;
         }
     }
