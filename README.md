@@ -41,7 +41,7 @@ Once you fire up a client terminal, you will be greeted with an interactive port
 total up your expenses automatically. The interface of the client is designed to self-explanatory. Use `rlwrap` for history
 support.
 
-Shutting down the client can be down by simply using the provided option in the menu.
+Shutting down the client can be done by simply using the provided option in the menu.
 
 ## Database format
 
