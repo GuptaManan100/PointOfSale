@@ -25,7 +25,7 @@ outside the reserved, i.e, and port about 1024, say 8090. Then run:
 $ ./server 8090
 ```
 
-This starts up a blocking server in your terminal, which will accept requests from any clients on a local network. To
+This starts up a blocking server in your terminal, which will accept requests from any client on a local network. To
 close the server, just use **Ctrl-C**. This will gracefully terminate the process.
 
 Next, to open up a client terminal, use:
