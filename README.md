@@ -19,7 +19,7 @@ This builds the code. You will need the **pthread** library, and a standard **li
 ## Usage
 
 We follow the usage format specified in the provided specification. To boot up the server, first choose any port
-outside the reserved, i.e, and port about 1024, say 8090. Then run:
+outside the reserved, i.e, and port above 1024, say 8090. Then run:
 
 ```
 $ ./server 8090
