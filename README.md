@@ -8,7 +8,7 @@ database I/O is being performed by `transaction.c`. Exported functionality is re
 
 ## Installation
 
-We follow a standard UNIX project distribution format. As such, the installation is just:
+We follow a standard UNIX project distribution format. As such, the build is just:
 
 ```
 $ make
